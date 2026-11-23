@@ -21,14 +21,16 @@ sun.castShadow = true;
 sun.shadow.mapSize.set(1024, 1024);
 scene.add(sun);
 
+const LAND_RADIUS = 38;
 const ground = new THREE.Mesh(
-  new THREE.CircleGeometry(38, 48),
+  new THREE.CircleGeometry(LAND_RADIUS, 48),
   new THREE.MeshStandardMaterial({ color: 0x70a84f, roughness: 1 })
 );
 ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
 
+// The central stone pad marks the estate center, not the only buildable area.
 const estate = new THREE.Mesh(
   new THREE.BoxGeometry(9, 0.25, 9),
   new THREE.MeshStandardMaterial({ color: 0xb4a77a })
@@ -129,12 +131,14 @@ function attack() {
 let selectedBuilding=null;
 document.querySelectorAll('[data-building]').forEach(button => button.addEventListener('click', () => {
   selectedBuilding=button.dataset.building;
-  message('Approach your estate, then press E to build');
+  message('Select a building, then press E anywhere on your land');
 }));
 
 function build() {
   if(!selectedBuilding) return false;
-  if(hero.position.length()>7){ message('Move inside the estate area'); return true; }
+  // Allow construction across the grassy estate, not just on the central pad.
+  // Leave a margin so the building footprint stays inside the circular land.
+  if(hero.position.length()>LAND_RADIUS-3.5){ message('Move a little farther inside your land to build'); return true; }
   const costs={house:[15,5],tower:[10,10],workshop:[20,8]};
   const [wood,stone]=costs[selectedBuilding];
   if(resources.wood<wood || resources.stone<stone){ message('Not enough building materials'); return true; }
@@ -208,8 +212,10 @@ function animate() {
     hero.position.x+=dx*8*dt; hero.position.z+=dz*8*dt;
     hero.rotation.y=Math.atan2(dx,dz);
   }
-  hero.position.x=THREE.MathUtils.clamp(hero.position.x,-24,24);
-  hero.position.z=THREE.MathUtils.clamp(hero.position.z,-24,24);
+  // Keep the hero on the circular estate land.
+  const distance=hero.position.length();
+  const maxWalkRadius=LAND_RADIUS-1;
+  if(distance>maxWalkRadius) hero.position.multiplyScalar(maxWalkRadius/distance);
 
   enemies.forEach(enemy => {
     const d=hero.position.distanceTo(enemy.position);
