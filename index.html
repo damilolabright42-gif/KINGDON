@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kingdom Works</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="game"></div>
+
+  <div id="hud">
+    <div class="brand">KINGDOM WORKS</div>
+    <div class="resources">
+      <span>Gold <b id="gold">25</b></span>
+      <span>Wood <b id="wood">12</b></span>
+      <span>Stone <b id="stone">8</b></span>
+    </div>
+  </div>
+
+  <div id="buildPanel">
+    <h2>Build</h2>
+    <button data-building="house">House <small>15 wood · 5 stone</small></button>
+    <button data-building="tower">Watchtower <small>10 wood · 10 stone</small></button>
+    <button data-building="workshop">Workshop <small>20 wood · 8 stone</small></button>
+  </div>
+
+  <div id="controls">
+    <b>WASD / ARROWS</b> Move &nbsp; <b>SPACE</b> Attack &nbsp; <b>E</b> Gather / Build
+  </div>
+  <div id="message"></div>
+
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
+  </script>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
