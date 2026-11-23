@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#17233c" />
   <title>Kingdom Works</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -28,6 +29,15 @@
   <div id="controls">
     <b>WASD / ARROWS</b> Move &nbsp; <b>SPACE</b> Attack &nbsp; <b>E</b> Gather / Build
   </div>
+
+  <div id="mobileControls" aria-label="Mobile controls">
+    <div id="joystick" aria-label="Movement joystick"><div id="joystickKnob"></div></div>
+    <div class="actionButtons">
+      <button id="interactButton" class="actionButton" aria-label="Gather or build">E</button>
+      <button id="attackButton" class="actionButton attack" aria-label="Attack">⚔</button>
+    </div>
+  </div>
+
   <div id="message"></div>
 
   <script type="importmap">

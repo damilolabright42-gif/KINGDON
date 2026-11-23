@@ -19,10 +19,12 @@ Then visit `http://localhost:8000`.
 - **WASD / Arrow keys:** move
 - **Space:** attack
 - **E:** gather resources or place the selected building
+- **Mobile:** drag the virtual joystick to move; use **E** and **sword** buttons to interact and attack
 
 ### Current features
 
 - 3D moving character
+- Keyboard and touch controls
 - Real-time enemy pursuit and combat
 - Gatherable trees and rocks
 - Gold, wood, and stone economy

@@ -29,7 +29,6 @@ ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
 
-// Center estate and a few decorative features.
 const estate = new THREE.Mesh(
   new THREE.BoxGeometry(9, 0.25, 9),
   new THREE.MeshStandardMaterial({ color: 0xb4a77a })
@@ -53,10 +52,9 @@ addBox(5, 3, 4, 0x9b6947, 0, 1.5, -2);
 addBox(5.2, 0.35, 4.2, 0x51413a, 0, 3.05, -2);
 
 const keys = {};
-addEventListener('keydown', e => { keys[e.key.toLower] = true; if (e.code === 'Space') attack(); });
-addEventListener('keyup', e => { keys[e.key.toLower] = false; });
+addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; if (e.code === 'Space') attack(); });
+addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 
-// Original hero avatar.
 const hero = new THREE.Group();
 const body = addBox(1.1, 1.5, 0.8, 0x2f78a8, 0, 1, 7);
 scene.remove(body); hero.add(body); body.position.set(0, 1, 0);
@@ -111,12 +109,11 @@ function nearest(list, max=2.4) {
 
 function gather() {
   const tree=nearest(trees, 2.5);
-  if(tree){ resources.wood += 3; scene.remove(tree); trees.splice(trees.indexOf(tree),1); updateHud(); message('+3 wood'); return; }
+  if(tree){ resources.wood += 3; scene.remove(tree); trees.splice(trees.indexOf(tree),1); updateHud(); message('+3 wood'); return true; }
   const rock=nearest(rocks, 2.5);
-  if(rock){ resources.stone += 3; scene.remove(rock); rocks.splice(rocks.indexOf(rock),1); updateHud(); message('+3 stone'); return; }
-  message('Move close to a tree or rock');
+  if(rock){ resources.stone += 3; scene.remove(rock); rocks.splice(rocks.indexOf(rock),1); updateHud(); message('+3 stone'); return true; }
+  return false;
 }
-addEventListener('keydown', e => { if(e.key.toLower() === 'e') gather(); });
 
 let attackTime=0;
 function attack() {
@@ -136,21 +133,64 @@ document.querySelectorAll('[data-building]').forEach(button => button.addEventLi
 }));
 
 function build() {
-  if(!selectedBuilding) return;
-  if(hero.position.length()>7){ message('Move inside the estate area'); return; }
+  if(!selectedBuilding) return false;
+  if(hero.position.length()>7){ message('Move inside the estate area'); return true; }
   const costs={house:[15,5],tower:[10,10],workshop:[20,8]};
   const [wood,stone]=costs[selectedBuilding];
-  if(resources.wood<wood || resources.stone<stone){ message('Not enough building materials'); return; }
+  if(resources.wood<wood || resources.stone<stone){ message('Not enough building materials'); return true; }
   resources.wood-=wood; resources.stone-=stone;
   let b;
   if(selectedBuilding==='house') b=addBox(2.4,2.2,2,0xb08a67,hero.position.x,1.1,hero.position.z);
   if(selectedBuilding==='tower') b=addBox(1.8,4.5,1.8,0x758398,hero.position.x,2.25,hero.position.z);
   if(selectedBuilding==='workshop') b=addBox(2.8,1.8,2.2,0x9c7139,hero.position.x,.9,hero.position.z);
-  if(b){ b.rotation.y=Math.random()*.15-.075; }
+  if(b) b.rotation.y=Math.random()*.15-.075;
   selectedBuilding=null; updateHud(); message('Construction complete');
+  return true;
 }
 
-addEventListener('keydown', e => { if(e.key.toLower()==='e' && selectedBuilding) build(); });
+function interact() {
+  if(build()) return;
+  if(gather()) return;
+  message('Move close to a tree or rock, or select a building');
+}
+addEventListener('keydown', e => { if(e.key.toLowerCase()==='e') interact(); });
+
+const joystick=document.querySelector('#joystick');
+const knob=document.querySelector('#joystickKnob');
+const mobileMove={x:0,z:0};
+let joystickPointer=null;
+
+function updateJoystick(event) {
+  const rect=joystick.getBoundingClientRect();
+  const dx=event.clientX-(rect.left+rect.width/2);
+  const dy=event.clientY-(rect.top+rect.height/2);
+  const max=rect.width*.34;
+  const length=Math.hypot(dx,dy);
+  const scale=length>max ? max/length : 1;
+  const x=dx*scale, y=dy*scale;
+  knob.style.transform=`translate(${x}px, ${y}px)`;
+  mobileMove.x=x/max;
+  mobileMove.z=y/max;
+}
+joystick.addEventListener('pointerdown', event => {
+  joystickPointer=event.pointerId;
+  joystick.setPointerCapture(event.pointerId);
+  updateJoystick(event);
+});
+joystick.addEventListener('pointermove', event => {
+  if(event.pointerId===joystickPointer) updateJoystick(event);
+});
+function releaseJoystick(event) {
+  if(event.pointerId!==joystickPointer) return;
+  joystickPointer=null;
+  mobileMove.x=0; mobileMove.z=0;
+  knob.style.transform='translate(0, 0)';
+}
+joystick.addEventListener('pointerup', releaseJoystick);
+joystick.addEventListener('pointercancel', releaseJoystick);
+
+document.querySelector('#attackButton').addEventListener('pointerdown', event => { event.preventDefault(); attack(); });
+document.querySelector('#interactButton').addEventListener('pointerdown', event => { event.preventDefault(); interact(); });
 
 const clock=new THREE.Clock();
 function animate() {
@@ -161,6 +201,8 @@ function animate() {
   if(keys.s||keys.arrowdown) dz+=1;
   if(keys.a||keys.arrowleft) dx-=1;
   if(keys.d||keys.arrowright) dx+=1;
+  dx+=mobileMove.x;
+  dz+=mobileMove.z;
   if(dx||dz){
     const length=Math.hypot(dx,dz); dx/=length; dz/=length;
     hero.position.x+=dx*8*dt; hero.position.z+=dz*8*dt;

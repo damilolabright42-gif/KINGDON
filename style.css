@@ -1,6 +1,6 @@
 * { box-sizing: border-box; }
 html, body, #game { width: 100%; height: 100%; margin: 0; overflow: hidden; }
-body { background: #17233c; color: #fff7df; font-family: Georgia, serif; }
+body { background: #17233c; color: #fff7df; font-family: Georgia, serif; touch-action: none; }
 canvas { display: block; }
 #hud { position: fixed; inset: 18px 18px auto 18px; display:flex; justify-content:space-between; align-items:flex-start; pointer-events:none; }
 .brand { font-size:24px; letter-spacing:4px; font-weight:bold; text-shadow:0 3px 8px #000; }
@@ -13,6 +13,28 @@ canvas { display: block; }
 #buildPanel button:hover { background:#80613d; }
 #buildPanel button small { display:block; color:#d8c5a5; }
 #controls { position:fixed; left:18px; bottom:18px; padding:8px 12px; background:#17233cb8; border-radius:5px; }
-#message { position:fixed; left:50%; bottom:65px; transform:translateX(-50%); min-width:300px; text-align:center; padding:8px 14px; background:#181f31cc; border-radius:5px; opacity:0; transition:.2s; }
+#message { position:fixed; left:50%; bottom:65px; transform:translateX(-50%); min-width:300px; text-align:center; padding:8px 14px; background:#181f31cc; border-radius:5px; opacity:0; transition:.2s; pointer-events:none; }
 #message.show { opacity:1; }
-@media (max-width:700px) { .brand { font-size:16px; } #buildPanel { width:170px; } #controls { max-width:230px; } }
+
+#mobileControls { display:none; position:fixed; inset:auto 0 max(12px, env(safe-area-inset-bottom)) 0; height:150px; pointer-events:none; }
+#joystick { position:absolute; left:18px; bottom:0; width:132px; height:132px; border:3px solid #d2aa64aa; border-radius:50%; background:#17233c55; pointer-events:auto; touch-action:none; }
+#joystickKnob { position:absolute; left:43px; top:43px; width:46px; height:46px; border:2px solid #fff1bd; border-radius:50%; background:#5f4a32dc; box-shadow:0 4px 12px #0008; }
+.actionButtons { position:absolute; right:18px; bottom:8px; display:flex; align-items:flex-end; gap:12px; pointer-events:auto; }
+.actionButton { width:74px; height:74px; border:3px solid #d2aa64; border-radius:50%; background:#26354edc; color:#fff7df; font: bold 24px Georgia, serif; box-shadow:0 5px 16px #0008; touch-action:none; }
+.actionButton.attack { width:88px; height:88px; background:#934851dc; font-size:30px; }
+.actionButton:active { transform:scale(.94); filter:brightness(1.25); }
+
+@media (hover:none), (pointer:coarse) {
+  #controls { display:none; }
+  #mobileControls { display:block; }
+  #message { bottom:155px; }
+  #buildPanel { top:78px; right:10px; width:155px; padding:8px; }
+  #buildPanel h2 { font-size:15px; }
+  #buildPanel button { padding:7px; font-size:13px; }
+}
+@media (max-width:700px) {
+  #hud { inset:10px 10px auto 10px; }
+  .brand { font-size:14px; letter-spacing:2px; max-width:120px; }
+  .resources { gap:4px; }
+  .resources span { padding:6px 7px; font-size:12px; }
+}
