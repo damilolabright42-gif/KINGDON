@@ -6,15 +6,12 @@ const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,200);
 const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;game.appendChild(renderer.domElement);
 
 scene.add(new THREE.HemisphereLight(0xffefc2,0x52654a,2));const sun=new THREE.DirectionalLight(0xfff1bd,2.5);sun.position.set(-18,28,10);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);scene.add(sun);
-
 sun.shadow.mapSize.set(2048,2048);
-Object.assign(sun.shadow.camera,{left:-45,right:45,top:45,bottom:-45,far:90});
-sun.shadow.camera.updateProjectionMatrix();
+Object.assign(sun.shadow.camera,{left:-45,right:45,top:45,bottom:-45,far:90});sun.shadow.camera.updateProjectionMatrix();
 
 const LAND_RADIUS=38,BUILD_GRID=6,trees=[],rocks=[],buildings=[],obstacles=[];
 const ground=new THREE.Mesh(new THREE.CircleGeometry(LAND_RADIUS,64),new THREE.MeshStandardMaterial({color:0x70a84f,roughness:1}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
 
-// Ordered estate plots: alternating shaded grass squares separated by visible lines.
 for(let x=-36;x<36;x+=BUILD_GRID){for(let z=-36;z<36;z+=BUILD_GRID){if(Math.hypot(x+BUILD_GRID/2,z+BUILD_GRID/2)<LAND_RADIUS-1){const tile=new THREE.Mesh(new THREE.PlaneGeometry(BUILD_GRID-.12,BUILD_GRID-.12),new THREE.MeshStandardMaterial({color:(x/BUILD_GRID+z/BUILD_GRID)%2===0?0x78ad50:0x6fa44b,roughness:1}));tile.rotation.x=-Math.PI/2;tile.position.set(x+BUILD_GRID/2,.018,z+BUILD_GRID/2);tile.receiveShadow=true;scene.add(tile);}}}
 const estate=new THREE.Mesh(new THREE.BoxGeometry(9,.25,9),new THREE.MeshStandardMaterial({color:0xb4a77a}));estate.position.set(0,.12,-2);estate.receiveShadow=true;scene.add(estate);
 
@@ -22,52 +19,12 @@ function addObstacle(x,z,radius){obstacles.push({x,z,radius});}
 function addBox(w,h,d,color,x,y,z,parent=scene,roughness=.85){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,roughness}));m.position.set(x,y,z);m.castShadow=m.receiveShadow=true;parent.add(m);return m;}
 
 const OAK=0x4a3322,PLASTER=0xe9dfc6,STONE=0x80838a,TILE=0x8a4b38,GOLD=0xe2b94a,CRIMSON=0x8e2230;
-function gable(w,h,d,color){
-  const s=new THREE.Shape();s.moveTo(-w/2,0);s.lineTo(w/2,0);s.lineTo(0,h);s.closePath();
-  const geo=new THREE.ExtrudeGeometry(s,{depth:d,bevelEnabled:false});geo.translate(0,0,-d/2);
-  const m=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color,roughness:.9}));m.castShadow=true;return m;
-}
-function timber(g,w,h,d,y0){
-  const t=.14;
-  for(const sx of[-1,1])for(const sz of[-1,1])addBox(t,h,t,OAK,sx*w/2,y0+h/2,sz*d/2,g);
-  for(const sz of[-1,1])for(const y of[y0+t/2,y0+h/2,y0+h-t/2])addBox(w,t,t,OAK,0,y,sz*d/2,g);
-  for(const sx of[-1,1])for(const y of[y0+h/2,y0+h-t/2])addBox(t,t,d,OAK,sx*w/2,y,0,g);
-}
-function windowAt(g,x,y,z){
-  addBox(.9,.85,.12,OAK,x,y,z,g);addBox(.66,.62,.14,0x8bc3d9,x,y,z,g,.2);
-  addBox(.05,.66,.16,OAK,x,y,z,g);addBox(.66,.05,.16,OAK,x,y,z,g);
-}
-function createHouse(x,z){
-  const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=Math.floor(Math.random()*4)*Math.PI/2;
-  addBox(4.1,.4,3.3,STONE,0,.2,0,g);addBox(3.8,2,3,PLASTER,0,1.4,0,g);timber(g,3.8,2,3,.4);
-  const roof=gable(4.9,1.8,3.9,TILE);roof.position.y=2.4;g.add(roof);
-  addBox(.55,1.9,.55,STONE,1.2,3.35,-.7,g);addBox(.75,.14,.75,0x5d6068,1.2,4.33,-.7,g);
-  addBox(1,1.6,.14,OAK,0,1.2,1.55,g);addBox(1.3,.2,.45,STONE,0,.1,1.9,g);
-  windowAt(g,-1.25,1.85,1.52);windowAt(g,1.25,1.85,1.52);
-  scene.add(g);addObstacle(x,z,2.85);return g;
-}
-function createWorkshop(x,z){
-  const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=Math.floor(Math.random()*4)*Math.PI/2;
-  addBox(4.2,1.5,3.2,STONE,0,.75,0,g);addBox(4.2,.9,3.2,PLASTER,0,1.95,0,g);timber(g,4.2,.9,3.2,1.5);
-  const roof=gable(5.2,1.5,4,0x5b4636);roof.position.y=2.4;g.add(roof);
-  addBox(.9,3.6,.9,0x6d7076,-1.4,2.2,-.9,g);addBox(1.1,.16,1.1,0x4f5258,-1.4,4.05,-.9,g);
-  addBox(1.6,1,.16,0x4f5258,1,.95,1.6,g);
-  const fire=new THREE.Mesh(new THREE.BoxGeometry(1.2,.6,.2),new THREE.MeshStandardMaterial({color:0xff8a2a,emissive:0xff5a10,emissiveIntensity:1.6}));
-  fire.position.set(1,.95,1.66);g.add(fire);addBox(1.1,1.3,.14,OAK,-.9,.65,1.62,g);
-  const stump=new THREE.Mesh(new THREE.CylinderGeometry(.3,.34,.5,10),new THREE.MeshStandardMaterial({color:0x6b4a30}));stump.position.set(1.5,.25,2.5);stump.castShadow=true;g.add(stump);
-  addBox(.32,.22,.8,0x2f3338,1.5,.6,2.5,g);
-  const barrel=new THREE.Mesh(new THREE.CylinderGeometry(.34,.34,.8,10),new THREE.MeshStandardMaterial({color:0x7a5535}));barrel.position.set(-1.8,.4,2.4);barrel.castShadow=true;g.add(barrel);
-  scene.add(g);addObstacle(x,z,3.05);return g;
-}
-function createTower(x,z){
-  const g=new THREE.Group();g.position.set(x,0,z);
-  const cyl=(rt,rb,h,y,c)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,12),new THREE.MeshStandardMaterial({color:c,roughness:1}));m.position.y=y;m.castShadow=m.receiveShadow=true;g.add(m);};
-  cyl(1.25,1.5,5,2.5,0x8b8f96);cyl(1.6,1.3,.6,5.2,0x6f737a);
-  for(let i=0;i<8;i++){const a=i/8*Math.PI*2,m=addBox(.5,.6,.5,0x6f737a,Math.cos(a)*1.45,5.8,Math.sin(a)*1.45,g);m.rotation.y=-a;}
-  addBox(.8,1.3,.12,OAK,0,.65,1.48,g);addBox(.2,.9,.12,0x1f2227,0,3.1,1.35,g);
-  addBox(.08,1.7,.08,OAK,0,6.5,0,g);addBox(.9,.55,.04,CRIMSON,.5,7.05,0,g);addBox(.9,.1,.05,GOLD,.5,7.05,0,g);
-  scene.add(g);addObstacle(x,z,2);return g;
-}
+function gable(w,h,d,color){const s=new THREE.Shape();s.moveTo(-w/2,0);s.lineTo(w/2,0);s.lineTo(0,h);s.closePath();const geo=new THREE.ExtrudeGeometry(s,{depth:d,bevelEnabled:false});geo.translate(0,0,-d/2);const m=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color,roughness:.9}));m.castShadow=true;return m;}
+function timber(g,w,h,d,y0){const t=.14;for(const sx of[-1,1])for(const sz of[-1,1])addBox(t,h,t,OAK,sx*w/2,y0+h/2,sz*d/2,g);for(const sz of[-1,1])for(const y of[y0+t/2,y0+h/2,y0+h-t/2])addBox(w,t,t,OAK,0,y,sz*d/2,g);for(const sx of[-1,1])for(const y of[y0+h/2,y0+h-t/2])addBox(t,t,d,OAK,sx*w/2,y,0,g);}
+function windowAt(g,x,y,z){addBox(.9,.85,.12,OAK,x,y,z,g);addBox(.66,.62,.14,0x8bc3d9,x,y,z,g,.2);addBox(.05,.66,.16,OAK,x,y,z,g);addBox(.66,.05,.16,OAK,x,y,z,g);}
+function createHouse(x,z){const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=Math.floor(Math.random()*4)*Math.PI/2;addBox(4.1,.4,3.3,STONE,0,.2,0,g);addBox(3.8,2,3,PLASTER,0,1.4,0,g);timber(g,3.8,2,3,.4);const roof=gable(4.9,1.8,3.9,TILE);roof.position.y=2.4;g.add(roof);addBox(.55,1.9,.55,STONE,1.2,3.35,-.7,g);addBox(.75,.14,.75,0x5d6068,1.2,4.33,-.7,g);addBox(1,1.6,.14,OAK,0,1.2,1.55,g);addBox(1.3,.2,.45,STONE,0,.1,1.9,g);windowAt(g,-1.25,1.85,1.52);windowAt(g,1.25,1.85,1.52);scene.add(g);buildings.push(g);addObstacle(x,z,2.85);return g;}
+function createWorkshop(x,z){const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=Math.floor(Math.random()*4)*Math.PI/2;addBox(4.2,1.5,3.2,STONE,0,.75,0,g);addBox(4.2,.9,3.2,PLASTER,0,1.95,0,g);timber(g,4.2,.9,3.2,1.5);const roof=gable(5.2,1.5,4,0x5b4636);roof.position.y=2.4;g.add(roof);addBox(.9,3.6,.9,0x6d7076,-1.4,2.2,-.9,g);addBox(1.1,.16,1.1,0x4f5258,-1.4,4.05,-.9,g);addBox(1.6,1,.16,0x4f5258,1,.95,1.6,g);const fire=new THREE.Mesh(new THREE.BoxGeometry(1.2,.6,.2),new THREE.MeshStandardMaterial({color:0xff8a2a,emissive:0xff5a10,emissiveIntensity:1.6}));fire.position.set(1,.95,1.66);g.add(fire);addBox(1.1,1.3,.14,OAK,-.9,.65,1.62,g);const stump=new THREE.Mesh(new THREE.CylinderGeometry(.3,.34,.5,10),new THREE.MeshStandardMaterial({color:0x6b4a30}));stump.position.set(1.5,.25,2.5);stump.castShadow=true;g.add(stump);addBox(.32,.22,.8,0x2f3338,1.5,.6,2.5,g);const barrel=new THREE.Mesh(new THREE.CylinderGeometry(.34,.34,.8,10),new THREE.MeshStandardMaterial({color:0x7a5535}));barrel.position.set(-1.8,.4,2.4);barrel.castShadow=true;g.add(barrel);scene.add(g);buildings.push(g);addObstacle(x,z,3.05);return g;}
+function createTower(x,z){const g=new THREE.Group();g.position.set(x,0,z);const cyl=(rt,rb,h,y,c)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,12),new THREE.MeshStandardMaterial({color:c,roughness:1}));m.position.y=y;m.castShadow=m.receiveShadow=true;g.add(m);};cyl(1.25,1.5,5,2.5,0x8b8f96);cyl(1.6,1.3,.6,5.2,0x6f737a);for(let i=0;i<8;i++){const a=i/8*Math.PI*2,m=addBox(.5,.6,.5,0x6f737a,Math.cos(a)*1.45,5.8,Math.sin(a)*1.45,g);m.rotation.y=-a;}addBox(.8,1.3,.12,OAK,0,.65,1.48,g);addBox(.2,.9,.12,0x1f2227,0,3.1,1.35,g);addBox(.08,1.7,.08,OAK,0,6.5,0,g);addBox(.9,.55,.04,CRIMSON,.5,7.05,0,g);addBox(.9,.1,.05,GOLD,.5,7.05,0,g);scene.add(g);buildings.push(g);addObstacle(x,z,2);return g;}
 
 const keep=new THREE.Group();keep.position.set(0,0,-2);addBox(5,3,4,0x9b6947,0,1.5,0,keep);addBox(5.2,.35,4.2,0x51413a,0,3.05,0,keep);scene.add(keep);addObstacle(0,-2,3.35);
 
@@ -103,6 +60,5 @@ const joystick=document.querySelector('#joystick'),knob=document.querySelector('
 
 function collides(x,z){return Math.hypot(x,z)>LAND_RADIUS-1||obstacles.some(o=>Math.hypot(x-o.x,z-o.z)<o.radius+.48);}const clock=new THREE.Clock();function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.03);let dx=0,dz=0;if(keys.w||keys.arrowup)dz-=1;if(keys.s||keys.arrowdown)dz+=1;if(keys.a||keys.arrowleft)dx-=1;if(keys.d||keys.arrowright)dx+=1;dx+=mobileMove.x;dz+=mobileMove.z;if(dx||dz){const len=Math.hypot(dx,dz);dx/=len;dz/=len;const step=8*dt,nx=hero.position.x+dx*step,nz=hero.position.z+dz*step;if(!collides(nx,hero.position.z))hero.position.x=nx;if(!collides(hero.position.x,nz))hero.position.z=nz;hero.rotation.y=Math.atan2(dx,dz);}enemies.forEach(e=>{const d=e.position.distanceTo(hero.position);if(d<9)e.position.addScaledVector(new THREE.Vector3(hero.position.x-e.position.x,0,hero.position.z-e.position.z).normalize(),dt*1.2);});const elapsed=performance.now()-attackStart;if(elapsed>=0&&elapsed<360){const t=elapsed/360;let swing;if(t<.25)swing=-.9*(t/.25);else if(t<.72)swing=-.9+2.15*((t-.25)/.47);else swing=1.25*(1-(t-.72)/.28);rightArm.rotation.z=swing;rightArm.rotation.x=-.45-Math.sin(t*Math.PI)*.7;sword.rotation.z=-.15+Math.sin(t*Math.PI)*.55;}else{rightArm.rotation.z=THREE.MathUtils.lerp(rightArm.rotation.z,0,.22);rightArm.rotation.x=THREE.MathUtils.lerp(rightArm.rotation.x,0,.22);sword.rotation.z=THREE.MathUtils.lerp(sword.rotation.z,0,.22);}updateHologram();camera.position.x+=(hero.position.x-camera.position.x)*.07;camera.position.z+=(hero.position.z+18-camera.position.z)*.07;camera.position.y+=(14-camera.position.y)*.07;camera.lookAt(hero.position.x,1,hero.position.z);renderer.render(scene,camera);}function resize(){const w=game.clientWidth||innerWidth,h=game.clientHeight||innerHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);}addEventListener('resize',resize);if(window.visualViewport)visualViewport.addEventListener('resize',resize);resize();updateHud();animate();
 
-game.addEventListener('pointerdown',()=>{if(selectedBuilding){clearHologram();message('Build cancelled');}});
 addEventListener('keydown',e=>{if(e.key==='Escape'&&selectedBuilding){clearHologram();message('Build cancelled');}});
 document.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>b.blur()));
